@@ -9,6 +9,7 @@ python3.9
 pychram
 
 
+```
 下载：
 
 git clone https://github.com/TONG0S/encrypt.git
@@ -20,4 +21,5 @@ pip -r requirements.txt
 运行:
 
 python encode.git
+```
 
