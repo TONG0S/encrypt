@@ -10,8 +10,14 @@ pychram
 
 
 下载：
+
 git clone https://github.com/TONG0S/encrypt.git
-安装模块
+
+安装模块:
+
 pip -r requirements.txt
-运行
-python encrypt.git
+
+运行:
+
+python encode.git
+
