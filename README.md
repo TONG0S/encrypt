@@ -24,3 +24,11 @@ python encode.git
 ```
 
 ![image](https://user-images.githubusercontent.com/46625992/120147671-9aae0980-c219-11eb-99f0-96e113e6f009.png)
+
+## 自定义库
+
+library/
+
+```
+html_encoding.py    自定义html实体编码库
+```
