@@ -4,7 +4,12 @@ from urllib import request, parse
 import hashlib
 import  library.html_encoding as html
 import time
-
+from base64 import b64decode,b32decode,b16decode
+import re,math
+from html import escape, unescape
+import quopri
+from nltk.corpus import words
+from urllib.parse import unquote
 import  re
 import requests
 import threading
@@ -18,7 +23,7 @@ fruzz    选择waf绕过
 指定payload 
 ascii               #已添加正则
 按钮保存到临时存储中  （添加对比字符串） #位添加正则
-md5彩虹表            (爬虫之后做)          （1000个，MD5加密保存，对比文件？添加:不添加）
+md5彩虹表            (之后做)          （1000个，MD5加密保存，对比文件？添加:不添加）
 md5 16位（2进制转换)
 进制转换  原本进制（单选 var.get() 获取）  目标进制（单选)
 
@@ -57,6 +62,210 @@ fruzz                                              #未想到
    
 
 '''
+
+
+# 定义Base64字符集
+
+def base32_decoded_length(base32_length):
+    return math.floor(base32_length * 5 / 8)
+def base64_decoded_length(base64_length):
+    return math.floor(base64_length * 3 / 4)
+def base16_decoded_length(base16_length):
+    return math.floor(base16_length / 2)
+def base64_decode(info):
+    try:
+        # print(info)
+        info=b64decode(info)
+        # print(info)
+    except:
+        pass
+    return info
+def base32_decode(info):
+    try:
+        # print(info)
+        info=b32decode(info)
+    except:
+        pass
+    return info
+def base16_decode(info):
+    try:
+        # print(info)
+        info=b16decode(info)
+    except:
+        pass
+    return info
+def to_str(info_,num,size_):
+
+    try:
+        info_ = info_.decode('utf-8')
+    except:
+        try:
+            info_ = info_.decode('gbk')
+        except:
+            return "False"
+    #解码验证
+    # if num=="16":
+    #     size_new=base16_decoded_length(size_)
+    #     if len(info_)==size_new:
+    #         return info_
+    # elif num=="32":
+    #     size_new=base32_decoded_length(size_)
+    #     if len(info_)==size_new:
+    #         return info_
+    # elif num=="64":
+    #     size_new=base64_decoded_length(size_)
+    #     print(size_new)
+    #     print(size_)
+    #     print(len(info_))
+    #     print(info_)
+    #     if len(info_)==size_new:
+    #         return info_
+    return info_
+def is_valid_input(info):
+    num=set("0123456789")
+    base16 = set("ABCDEF0123456789")
+    base32 = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=")
+    base64 = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789=+/")
+    # print(info)
+    info_=""
+    # 判断是否只包含允许的字符
+    if set(info).issubset(num):
+        return info
+
+    else:
+        size_ = len(info.replace("=","").replace("/","").replace("+",""))
+        if set(info).issubset(base16):
+            info_=base16_decode(info)
+            t=to_str(info_,"16",size_)
+            if t!="False":
+                return t
+        if set(info).issubset(base32):
+            info_=base32_decode(info)
+            t=to_str(info_,"32",size_)
+            if t!="False":
+                return t
+        if set(info).issubset(base64):
+            info_=base64_decode(info)
+            t=to_str(info_,"64",size_)
+            if t!="False":
+                return t
+
+
+    return info
+def chr_encode(words_):
+    t = r'(chr\(([0-9]{1,3})\)+)'
+    t = re.findall(t, str(words_))
+    if len(t) >= 1:
+        words_ = re.sub(r'chr\(([0-9]{1,3})\)', lambda x: chr(int(x.group(1))), words_)
+    return words_
+def x_hexadecimal(x):
+    t = r'(\\x[a-zA-Z0-9]{2})'
+    t = re.findall(t, x)
+    if len(t) >= 1:
+        # x = x.encode('unicode_escape')
+
+        ss = re.sub(r'\\x[a-zA-Z0-9]{2}', lambda x: x.group(0).replace('\\x', '%'), x)
+        x = unquote(ss)
+    return x
+def  unicode_decode(x):
+    t = r'((\\u[a-zA-Z0-9]{4})+)'
+    t = re.findall(t, str(x))
+    if len(t) >= 1:
+        x = re.sub(r'\\u([0-9a-fA-F]{4})', lambda x: chr(int(x.group(1), 16)), x)
+    return x
+def uri_decode(x):
+    x = unquote(x)
+    return x
+def html_decode(x):
+    x = unescape(x)
+    return x
+def QuotedPrintable_decode(x):
+    x = quopri.decodestring(x.encode()).decode()
+    return x
+def fist_(x):
+    #尝试\x前缀解码
+    x=x_hexadecimal(x)
+
+    # unicode解码
+    x=unicode_decode(x)
+    #html实体编码
+    x=html_decode(x)
+    #uri解码
+    x=uri_decode(x)
+    print(x)
+    #Quoted-Printable 解码
+    # x=QuotedPrintable_decode(x)
+    t=re.split('([^\d\w\+\\\/])',x)
+
+    words_=""
+    for i in t:
+        size_=len(i)
+        temp=str(i)
+        # if str(size_) in encode_info.keys():
+        #     print(encode_info[str(size_)])
+        # print(temp)
+        if len(temp)>=3:
+            #尝试两次加=
+            if temp in words.words():
+                pass
+            else:
+                for n in range(1,3):
+                    temp=is_valid_input(temp)
+                    # print(temp)
+                    x=str(i)+"="*n
+                    if temp+"="!=x:
+                        # print(temp)
+                        break
+                    else:
+                        temp=temp+"="
+
+            if temp==x:
+                temp=temp[:-n]
+
+        words_+=temp
+    #chr解码
+    # words_ = chr_encode(words_)
+
+    # print("\n")
+    # print("******"*20)
+    # print("解密结果：")
+    # print("\n")
+    # print(words_)
+    return words_
+def php_(payload):
+    info={}
+    payload=payload.replace('"."',"")
+    payload=re.sub('([^\d\w]\.[^\d\w]*?)',lambda x: x.group(1).replace('"."', '').replace('.', ''),payload)
+    payload=payload.split(";")
+    words_=""
+    for i in payload:
+        temp=str(i)
+        t = r'\$([_0-9a-zA-Z]+)='
+
+        variable_ = re.findall(t, str(i))
+        variable_ = list(set(variable_))
+        for j in variable_:
+            if len(info) >=1:
+                for k, v in info.items():
+                    t = r'(\${}[^\d\w_=]+)'.format(str(k))
+                    t = re.findall(t, str(i))
+                    if len(t) >= 1:
+                        temp = re.sub('(\${}[^\d\w_=]+)'.format(k),
+                                      lambda x: x.group(1).replace("${}".format(str(k)), v), temp)
+            t = r'(\${}=([^;]+))'.format(str(j))
+            t = re.findall(t, str(temp))
+            if len(t)>=1:
+                # print(t)
+                info[str(j)]=list(t)[0][1]
+        words_+=temp+";"
+
+    words_=chr_encode(words_)
+    words_=chr_encode(words_)
+    print("\n"*2)
+    print("尝试php 解码"+"*"*20)
+    print("\n"*2)
+    print(words_)
+
 class test(tk.Tk):
 
     def __init__(self):
@@ -71,6 +280,7 @@ class test(tk.Tk):
         self.base_encode_url = ["no", 'yes']  # 设置进制列表
         self.base_info = "16进制"  # 设置进制编码
         self.url_info = ["协议:  ", "域名: ", "路径: ", "参数: ", "查询: ", " "]  # 设置进制编码
+        self.BASE64_CHARS="gx74KW1roM9qwzPFVOBLSlYaeyncdNbI=JfUCQRHtj2+Z05vshXi3GAEuT/m8Dpk6"
         self.url_dictionary_info="PHP"
         self.choose_base = 0  # 是否是加密列表
         self.choose_url = 0  # 是否是url处理列表
@@ -92,14 +302,17 @@ class test(tk.Tk):
         self.mainfile = tk.Menu(self.mainmenu, tearoff=0, foreground="white", bg="black")  # 实例化一个菜单
         self.mainmenu.add_cascade(label="加解密", menu=self.mainfile)
         self.mainfile.add_command(label="judge", command=self.len_judge)
-        self.mainfile.add_command(label="MD5", command=self.md5_code)
         self.mainfile.add_command(label="URL", command=self.url_code)  # 创建二级菜单
         self.mainfile.add_command(label="HTML实体", command=self.html_code)
         self.mainfile.add_command(label="BASE64", command=self.base64_code)
+        self.mainfile.add_command(label="BASE32", command=self.base32_code)
+        self.mainfile.add_command(label="BASE16", command=self.base16_code)
         self.mainfile.add_command(label="ASCII", command=self.ascii_code)
         self.mainfile.add_command(label="SHA1", command=self.sha1_code)
         self.mainfile.add_command(label="SHA256", command=self.sha256_code)
         self.mainfile.add_command(label="MD5", command=self.md5_code)
+        self.mainfile.add_command(label="Seeyon", command=self.seeyon_code)
+        self.mainfile.add_command(label="Auto", command=self.auto_)
         self.config(menu=self.mainmenu)
 
         self.urlfile = tk.Menu(self.mainmenu, tearoff=0, foreground="white", bg="black")  # 实例化一个菜单
@@ -320,6 +533,22 @@ class test(tk.Tk):
         self.choose_encode_ascii = 0
         self.judge_show()
         self.type_info = "base64"
+    def base32_code(self):
+        self.lb.config(text='BASE32')
+        self.choose_base = 1
+        self.choose_url = 0
+        self.choose_base_url = 0
+        self.choose_encode_ascii = 0
+        self.judge_show()
+        self.type_info = "base32"
+    def base16_code(self):
+        self.lb.config(text='BASE16')
+        self.choose_base = 1
+        self.choose_url = 0
+        self.choose_base_url = 0
+        self.choose_encode_ascii = 0
+        self.judge_show()
+        self.type_info = "base16"
     #
     def html_code(self):
         self.lb.config(text='HTML实体')
@@ -375,7 +604,26 @@ class test(tk.Tk):
         self.type_info = "md5"
         self.text_info.delete(1.0, tk.END)       #清空文本框
         self.text_info.insert(tk.END, "不可逆")   #添加信息
-
+    def seeyon_code(self):
+        self.lb.config(text='seeyon')
+        self.choose_base = 1
+        self.choose_url = 0
+        self.choose_base_url = 0
+        self.choose_encode_ascii = 0
+        self.judge_show()
+        self.type_info = "seeyon"
+        self.text_info.delete(1.0, tk.END)       #清空文本框
+        self.text_info.insert(tk.END, "不可逆")   #添加信息
+    def auto_(self):
+        self.lb.config(text='Auto')
+        self.choose_base = 1
+        self.choose_url = 0
+        self.choose_base_url = 0
+        self.choose_encode_ascii = 0
+        self.judge_show()
+        self.type_info = "Auto"
+        self.text_info.delete(1.0, tk.END)       #清空文本框
+        self.text_info.insert(tk.END, "不可逆")   #添加信息
     def domain_deal(self):
         self.lb.config(text='URL分解')
         self.choose_base = 0
@@ -405,7 +653,10 @@ class test(tk.Tk):
             self.data_info = self.entry_encode.get()  # 获取提交的数据
             if self.type_info == "base64":  # 如果是base64加密
                 self.data_info = base64.b64encode(self.data_info.encode(self.encode_info))
-
+            elif self.type_info == "base32":  # 如果是base64加密
+                self.data_info = base64.b32encode(self.data_info.encode(self.encode_info))
+            elif self.type_info == "base16":  # 如果是base64加密
+                self.data_info = base64.b16encode(self.data_info.encode(self.encode_info))
             elif self.type_info == "url":
                 #self.data_info = parse.quote(self.data_info, encoding=self.encode_info)
                 strOut = ''
@@ -431,7 +682,9 @@ class test(tk.Tk):
                 self.data_info=data_temp
             elif self.type_info=='html':
                 self.data_info=html.escape(self.data_info)
-
+            elif self.type_info == 'seeyon':
+                # print(self.data_info)
+                self.data_info = self.base64_encode_seeyon(self.data_info.encode(self.encode_info))
             elif self.type_info == "sha1":
                 self.sha1_temp = hashlib.sha1()  # 选择需要的加密方式
                 self.sha1_temp.update(self.data_info.encode(self.encode_info))  # 对需要加密的数据进行加密
@@ -470,6 +723,19 @@ class test(tk.Tk):
             self.data_info = self.entry_encode.get()  # 获取提交的数据
             if self.type_info == "base64":
                 self.data_info = base64.b64decode(self.data_info).decode(self.encode_info)
+            elif self.type_info == "base32":
+                self.data_info = base64.b32decode(self.data_info).decode(self.encode_info)
+            elif self.type_info == "base16":
+                self.data_info = base64.b16decode(self.data_info).decode(self.encode_info)
+            elif self.type_info == "Auto":  # 如果是Auto
+                payload = fist_(self.data_info)
+                num=1
+                try:
+                    for i in range(num):
+                        payload = fist_(payload)
+                except:
+                    pass
+                self.data_info =payload
             elif self.type_info == "url":
 
                 strOut = ''
@@ -521,6 +787,8 @@ class test(tk.Tk):
             elif self.type_info == 'html':
 
                 self.data_info =html.unescape(self.data_info)
+            elif self.type_info == 'seeyon':
+                self.data_info = self.base64_decode_seeyon(self.data_info)
             elif self.type_info == "sha1":
                 pass
             elif self.type_info == "sha256":
@@ -620,7 +888,52 @@ class test(tk.Tk):
             #threading.Thread(target=self.dicfile_scan(data_all1,dic_enum, dic_scan)).start()
             threading.Thread(target=self.dicfile_scan(data_all1,page, file_scan)).start()
 
+    def base64_encode_seeyon(self,data):
+        # 初始化编码结果
 
+        encoded = []
+        padding = 0
+        print(data)
+        # 将字节数据转换为整数列表
+        bytes_data = [byte for byte in data]
+        print(bytes_data)
+        # 处理每三个字节
+        for i in range(0, len(bytes_data) - padding, 3):
+            # 将三个字节合并为24位的整数
+            bits = (bytes_data[i] << 16) + (bytes_data[i + 1] << 8) + bytes_data[i + 2]
+            # 将24位整数转换为4个6位的组
+            for j in range(4):
+                if i * 8 + j * 6 <= len(data) * 8:
+                    encoded.append(self.BASE64_CHARS[(bits >> (18 - j * 6)) & 0x3F])
+                else:
+                    encoded.append('=')
+        print(encoded)
+        print(''.join(encoded))
+        return ''.join(encoded)
+
+    def base64_decode_seeyon(self,encoded):
+        # 移除填充字符
+        encoded = encoded.rstrip('=')
+        # print(encoded)
+        # 初始化解码结果
+        decoded = bytearray()
+        bits = 0
+        bits_count = 0
+        # print("test")
+        # 处理每个Base64字符
+        for char in encoded:
+            # print(char)
+            # 将字符转换为6位的整数
+            value = self.BASE64_CHARS.index(char)
+            bits = (bits << 6) + value
+            bits_count += 6
+
+            # 当有8位有效位时，提取一个字节
+            if bits_count >= 8:
+                bits_count -= 8
+                decoded.append((bits >> bits_count) & 0xFF)
+        # print(decoded)
+        return bytes(decoded)
 
 
 
