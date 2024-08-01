@@ -15,50 +15,7 @@ import requests
 import threading
 '''
 未完成
-可以添加从文件中读取
-产生随机数？
-一键复制
-替换   全部文字enter  查找的字符串enter  替换字符enter
-fruzz    选择waf绕过
-指定payload 
-ascii               #已添加正则
-按钮保存到临时存储中  （添加对比字符串） #位添加正则
-md5彩虹表            (之后做)          （1000个，MD5加密保存，对比文件？添加:不添加）
-md5 16位（2进制转换)
-进制转换  原本进制（单选 var.get() 获取）  目标进制（单选)
 
-html实体
- 
-    string = '[注]&#9312关，指居庸关。&#9313旆（pèi），旌旗。'
-    print(html.unescape(string))
-    string = '<script></sript>'
-    print(html.escape(string))
-
-
-
-目录遍历                                             #可以   利用urlfile   #判断最后一个是不是 ’/‘  不是 查找最后一个’/‘，从这个目录开始扫 
-                                                                        保存到文件？指定（如何指定），不指定，默认文件夹+time+时间戳？
-    字典
-    with open('1.txt','r+') as file_info:  #
-    for line in file_info:
-        response=requests.get('url'+line)         #扫描   判断response.text?    responses.status_code==200?
-
-
-sql扫描                 #url                        #未想到
-      url 
-    指定参数  yes or no
-    指定请求头  yes or no
-    if user-agent  :hearder+=user_agent
-    referer:       :hearder+=referer
-    Cookie         :hearder+=referer
-    如何判断成功                                     #手工填写特征？   原本txt ==   (and 1=2).txt
-      
-      
-fruzz                                              #未想到
-   url
-   payload 文件
-   指定payload前 后？  正则？   修改payload?
-   结果特征？                                       #页面对比？      输入选择特征？ or ~
    
 
 '''
