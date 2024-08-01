@@ -32,3 +32,11 @@ library/
 ```
 html_encoding.py    自定义html实体编码库
 ```
+
+
+## 20240801  
+
+新增seeyon加解密 
+
+Auto
+
